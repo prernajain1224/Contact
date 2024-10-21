@@ -10,19 +10,19 @@ from .models import Content
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 
+
+
 # User registration
 @api_view(['POST'])
 def register_user(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user) 
 
         return Response({
             "message": "Account created successfully",
             "name": user.username,
             "email": user.email,
-            "token": token.key
         }, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -36,7 +36,7 @@ def login_user(request):
     user = authenticate(username=username, password=password)
     
     if user is not None:
-        token, created = Token.objects.get_or_create(user=user)
+        token = Token.objects.get(user=user)  # Fetch the token (it will already exist)
         return Response({
             "token": token.key,
             "message": "Login successful"
@@ -44,7 +44,8 @@ def login_user(request):
     else:
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-# Add new contact
+
+# Add new contact'
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_contact(request):
@@ -55,6 +56,7 @@ def add_contact(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Edit contact
+@csrf_exempt
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def edit_contact(request, contact_id):
@@ -72,6 +74,7 @@ def edit_contact(request, contact_id):
         return Response({"message": "Contact deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 # Get all contacts
+@csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_contacts(request):
@@ -79,7 +82,8 @@ def get_contacts(request):
     serializer = ContentSerializer(contacts, many=True)
     return Response(serializer.data)
 
-# Get contact by ID
+# Get contact by ID'
+@csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_contact_by_id(request, contact_id):
